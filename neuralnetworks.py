@@ -214,12 +214,12 @@ class NeuralRegressor(nn.Module):
         transformations, and then the final layer transformation.
 
         Args:
-        input_dim (int): _description_
-        hidden_dims (list): _description_
-        num_classes (int): _description_
+        input_dim (int): number of input dimensions
+        hidden_dims (list): number of dimensions in each hidden dimension
+        num_classes (int): number of output dimensions
 
         Returns:
-        Tuple[list, torch.nn.modules.linear.Linear]: _description_
+        Tuple[list, torch.nn.modules.linear.Linear]: Layer Transformation, Final Layer Transformation
         """
 
         if hidden_dims == []:
@@ -240,8 +240,8 @@ class NeuralRegressor(nn.Module):
         of epochs. Nothing is returned.
 
         Args:
-        X (torch.Tensor): _description_
-        y (torch.Tensor): _description_
+        X (torch.Tensor): The X training data
+        y (torch.Tensor): the y training data
         """
 
         self.hidden, self.out = self.layers(X.shape[1], self.params_dict['hidden_units'], y.shape[1])
@@ -264,10 +264,10 @@ class NeuralRegressor(nn.Module):
         of the output based on the prevoiusly fitted model on the training set.
 
         Args:
-        X (torch.Tensor): _description_
+        X (torch.Tensor): The testing X data
 
         Returns:
-        np.ndarray: _description_
+        np.ndarray: The prediction of the testing data
         """
 
         predictions = self.forward(X)
@@ -281,7 +281,7 @@ class NeuralRegressor(nn.Module):
         be analyzing, and their default values.
 
         Returns:
-        dict: _description_
+        dict:  Default values of the hyperparameters
         """
 
         dict = {'activation': F.relu, 'hidden_units' : [], 'dropout_p': 0.0, 'learning_rate': 1e-2, 'epochs': 500}
@@ -295,7 +295,7 @@ class NeuralRegressor(nn.Module):
         the next trial, and sets these values into the dictionary.
 
         Returns:
-        dict: _description_
+        dict: Optuna picked hyperparameters values
         """
 
         for key in params:
@@ -318,14 +318,42 @@ class ConvolutionalNeuralClassifier(nn.Module):
         super(ConvolutionalNeuralClassifier, self).__init__()
         self.params_dict = self.get_params()
 
-    def forward(self, x_in):
+    def forward(self, x_in: torch.Tensor) -> torch.Tensor:
+
+        """Forward Propagation
+
+        This function does the forward propagaion for the neural network, meaning that the
+        input data is fed into the forward direction through the network. Each hidden layer
+        takes its input data, processes it as per the activation functoin and passes it to
+        the next layer.
+
+        Args:
+        x_in (torch.Tensor): Input of the neural network
+
+        Returns:
+        torch.Tensor: Forward propagation
+        """
 
         x = self.cnn_layers(x_in)
         x = x.view(x.size(0), -1)
         x_out = self.linear_layers(x)
         return x_out
     
-    def layers(self, input_dim, num_classes):
+    def layers(self, input_dim: int, num_classes: int) -> Tuple[list, torch.nn.modules.linear.Linear]:
+
+        """Assemble layers together
+
+        This function applies a linear transformation for each step of the neural network
+        model, and then returns said layers into two variables: a list of all the layer
+        transformations, and then the final layer transformation.
+
+        Args:
+        input_dim (int): number of input dimensions
+        num_classes (int): number of output dimensions
+
+        Returns:
+        Tuple[list, torch.nn.modules.linear.Linear]: Layer transformations, Final layer transformation
+        """
 
         cnn_layers = nn.Sequential(
             nn.Conv2d(input_dim, self.params_dict['features'], kernel_size=self.params_dict['kernel_size_conv'], stride=self.params_dict['stride_conv'], padding=self.params_dict['padding']),
@@ -336,7 +364,18 @@ class ConvolutionalNeuralClassifier(nn.Module):
         linear_layers = nn.Sequential(nn.Linear(self.params_dict['features'] * (((-(((-((self.im_dim + 2 *self.params_dict['padding'] - (self.params_dict['kernel_size_conv'] - 1)) // (-1 *self.params_dict['stride_conv']))) - (self.params_dict['kernel_size_pool'] - 1)) // (-1 * self.params_dict['stride_pool']))) ** 2)) , num_classes))
         return cnn_layers, linear_layers
     
-    def fit(self, X, y):
+    def fit(self, X: torch.Tensor, y: torch.Tensor):
+
+        """Fits the training data on to the target
+
+        This function adjusts the weights according to the data values, so that
+        a higher value of accuracy can be achieved. This done for a set number
+        of epochs. Nothing is returned.
+
+        Args:
+        X (torch.Tensor): The X training data
+        y (torch.Tensor): the y training data
+        """
 
         self.in_dim, self.im_dim, self.out_dim = X.shape[1], X.shape[2], y.shape[1]
         self.cnn_layers, self.linear_layers = self.layers(self.in_dim, self.out_dim)
@@ -351,7 +390,19 @@ class ConvolutionalNeuralClassifier(nn.Module):
             accuracy = self.accuracy_fn(y_pred=y_pred, y_true=y)
             print(f"Epoch: {epoch} | loss: {loss:.2f}, accuracy: {accuracy:.1f}")
     
-    def predict(self, X):
+    def predict(self, X: torch.Tensor) -> np.ndarray:
+
+        """Predicts the output value
+
+        This function intakes the testing set of data, and then predicts the values
+        of the output based on the prevoiusly fitted model on the training set.
+
+        Args:
+        X (torch.Tensor): The testing X data
+
+        Returns:
+        np.ndarray: The prediction of the testing data
+        """
 
         predictions = self.forward(X)
         predictions = predictions.argmax(axis=1)
@@ -363,18 +414,51 @@ class ConvolutionalNeuralClassifier(nn.Module):
         y_predictions = torch.Tensor(y_predictions)
         return y_predictions
     
-    def get_params(self):
+    def get_params(self) -> dict:
+
+        """Returns default hyperparameter values
+
+        This function just returns the names of of the hyperparameters that we will
+        be analyzing, and their default values.
+
+        Returns:
+        dict:  Default values of the hyperparameters
+        """
     
         dict = {'learning_rate': 1e-2, 'epochs': 500, 'features': 3, 'kernel_size_conv': 2, 'stride_conv': 1, 'padding': 1, 'kernel_size_pool':2, 'stride_pool':2}
         return dict
 
-    def set_params(self, **params):
+    def set_params(self, **params: dict) -> dict:
+
+        """Updates the dictionary parameters
+
+        This function takes the hyperparameter values that Optuna recommended for
+        the next trial, and sets these values into the dictionary.
+
+        Returns:
+        dict: Optuna picked hyperparameters values
+        """
 
         for key in params:
             self.params_dict[key] = params[key]
         return self.params_dict
 
-    def accuracy_fn(self, y_pred, y_true):
+    def accuracy_fn(self, y_pred: torch.Tensor, y_true: torch.Tensor) -> float:
+
+        """Finds the accuracy
+
+        This function checks how many data points were classified correctly,
+        and how many were classified incorrectly. Then, the function returns
+        a values from zero to one depending on how well the data points were
+        classified.
+
+        Args:
+        y_pred (torch.Tensor): Our predictions for the y test values
+        y_true (torch.Tensor): The correct y test values
+
+        Returns:
+        float: Returns accuracy
+        """
         
         n_correct = torch.eq(y_pred.argmax(axis=1), y_true.argmax(axis=1)).sum().item()
         accuracy = (n_correct / len(y_pred)) * 100
