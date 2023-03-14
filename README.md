@@ -1,3 +1,3 @@
 # hyperparameter-optimiser
 
-This is a hyperparameter optimiser using the Optuna package.
+This is a hyperparameter optimiser using the Optuna package. The [optimiser.py](https://github.com/ashabib1/hyperparameter-optimiser/blob/main/optimiser.py) file shows the main implementation of the optimiser using the Optuna package. The main function is in this file with an example of its usage. The [neuralnetworks.py](https://github.com/ashabib1/hyperparameter-optimiser/blob/main/neuralnetworks.py) file includes the classes for all the neural networks. The [model_config.py](https://github.com/ashabib1/hyperparameter-optimiser/blob/main/model_config.py) file shows the range of values the hyperparameters will take for each possible model.
